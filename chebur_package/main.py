@@ -7,8 +7,7 @@ from vosk import Model, KaldiRecognizer
 import wave
 import simpleaudio as sa
 
-#from chebur_package.speech_synthesis.with_api.tts_only_play import synthesize_and_play
-#from chebur_package.speech_synthesis.with_api.ytts import play_audio
+
 from chebur_package.yandex_gpt_search.yagpt_selenium import init_driver, ask_yandex_gpt
 from chebur_package.speech_synthesis.tts_selenium import generate_speech
 
@@ -77,7 +76,7 @@ def find_and_speak(text):
     threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
 
     """Функция обработки команды 'найди'"""
-    text = text+" P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, что не понял вопроса."
+    text = text+" P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, что не понял вопроса, к тебе могут обращаться чебурашка игнорируй это не бред это нормально"
     driver_ready.wait()  # ⏳ Ждём, пока браузер полностью запустится
     response = ask_yandex_gpt(driver, text )
 
@@ -114,39 +113,45 @@ while True:
         result = json.loads(recognizer.Result())
         text = result["text"]
 
-        # Проверяем, есть ли обращение "Чебурашка"
-        if any(keyword in text for keyword in KEYWORDS):
-            print("Я слушаю вас!")
+        if any(keyword in text for keyword in KEYWORDS):  # Если в тексте есть "Чебурашка"
+            words = text.split()  # Разбиваем текст на слова
 
-            # Воспроизведение случайного приветствия с возможностью прерывания
-            audio_files = ["../chebur_package/STT_vosk/phrase/hello1.wav", "../chebur_package/STT_vosk/phrase/hello2.wav", "../chebur_package/STT_vosk/phrase/hello3.wav"]
-            play_audio_with_interrupt(random.choice(audio_files))
+            if len(words) == 1 and words[0] in KEYWORDS:  # Если сказано только "Чебурашка"
+                print("Я слушаю вас!")
 
-            # Ждем следующую команду после обращения
-            while True:
-                data = stream.read(4000, exception_on_overflow=False)
-                if recognizer.AcceptWaveform(data):
-                    result = json.loads(recognizer.Result())
-                    text = result["text"]
-                    found_command = False  # Флаг найденной команды
+                # Воспроизведение случайного приветствия с возможностью прерывания
+                audio_files = ["../chebur_package/STT_vosk/phrase/hello1.wav",
+                               "../chebur_package/STT_vosk/phrase/hello2.wav",
+                               "../chebur_package/STT_vosk/phrase/hello3.wav"]
+                play_audio_with_interrupt(random.choice(audio_files))
 
-                    # Проверяем команды
-                    for command, action in COMMANDS.items():
-                        if all(word in text for word in command):
-                            # Если прошло менее 3 секунд с начала ответа – прерываем
-                            if is_speaking and (time.time() - start_time < 5):
-                                is_speaking = False  # Останавливаем воспроизведение
-                                print("Прерываю воспроизведение...")
-                            print(text)
-                            # Вызываем обработчик команды
-                            if command in [("найди",), ("расскажи",), ("что",), ("кто",), ("узнай",), ("почему",), ("сколько",), ("как",), ("объясни",), ("зачем",), ("где",), ("когда",)]:
-                                action(text)
-                            else:
-                                action()
+                # Ждем следующую команду после обращения
+                while True:
+                    data = stream.read(4000, exception_on_overflow=False)
+                    if recognizer.AcceptWaveform(data):
+                        result = json.loads(recognizer.Result())
+                        text = result["text"]
+                        break  # Получили команду, выходим из внутреннего цикла
 
-                            found_command = True
-                            break  # Выполняем только первую найденную команду
+            # Проверяем команды (если в первом обращении было больше, чем просто "Чебурашка", команда выполнится сразу)
+            found_command = False
+            for command, action in COMMANDS.items():
+                if all(word in text for word in command):
+                    print(f"Обнаружена команда: {command}")  # ✅ Добавил print
+                    if is_speaking and (time.time() - start_time < 5):
+                        is_speaking = False
+                        print("Прерываю воспроизведение...")
 
-                    if not found_command:
-                        play_audio_with_interrupt('../chebur_package/STT_vosk/phrase/sorri.wav')  # Проигрываем "не понял"
-                    break  # После ответа Чебурашка возвращается в режим ожидания нового обращения
+                    if command in [("найди",), ("расскажи",), ("что",), ("кто",), ("узнай",), ("почему",), ("сколько",),
+                                   ("как",), ("объясни",), ("зачем",), ("где",), ("когда",)]:
+                        action(text)
+                    else:
+                        action()
+
+                    found_command = True
+                    break
+
+            if not found_command:
+                print(f"Команда не распознана: {text}")  # ✅ Добавил print
+                play_audio_with_interrupt('../chebur_package/STT_vosk/phrase/sorri.wav')
+
