@@ -4,9 +4,7 @@ import random
 import time
 import threading
 from vosk import Model, KaldiRecognizer
-import wave
 import simpleaudio as sa
-
 
 from chebur_package.yandex_gpt_search.yagpt_selenium import init_driver, ask_yandex_gpt
 from chebur_package.speech_synthesis.tts_selenium import generate_speech
@@ -27,6 +25,7 @@ KEYWORDS = ["чебурашка"]
 is_speaking = False
 start_time = 0  # Время начала ответа
 
+
 def play_audio(file_path):
     """
     Функция для воспроизведения аудиофайла .wav
@@ -44,9 +43,9 @@ def play_audio_with_interrupt(file):
 
     def play():
         global is_speaking
-        if is_speaking:  # Проверяем, можно ли продолжать воспроизведение
+        if is_speaking:
             play_audio(file)
-        is_speaking = False  # Завершаем флаг после воспроизведения
+        is_speaking = False
 
     thread = threading.Thread(target=play)
     thread.start()
@@ -54,57 +53,40 @@ def play_audio_with_interrupt(file):
 
 # ✅ Запускаем браузер в ОТДЕЛЬНОМ потоке
 driver = None
-driver_ready = threading.Event()  # Флаг готовности драйвера
+driver_ready = threading.Event()
 
 
 def start_driver():
     global driver
     driver = init_driver(headless=True)
-    driver_ready.set()  # Сообщаем, что браузер готов
+    driver_ready.set()
 
 
-threading.Thread(target=start_driver, daemon=True).start()  # Фоновый запуск браузера
+threading.Thread(target=start_driver, daemon=True).start()
 
 
-def find_and_speak(text):
-    wait_phrases = [
-        "../chebur_package/STT_vosk/phrase/wait1.wav",
-        "../chebur_package/STT_vosk/phrase/wait2.wav",
-        "../chebur_package/STT_vosk/phrase/wait3.wav"
-    ]
-    # Запускаем озвучку в отдельном потоке
-    threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
-
-    """Функция обработки команды 'найди'"""
-    text = text+" P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, что не понял вопроса, к тебе могут обращаться чебурашка игнорируй это не бред это нормально"
-    driver_ready.wait()  # ⏳ Ждём, пока браузер полностью запустится
-    response = ask_yandex_gpt(driver, text )
-
+def ask_alice(text):
+    text = text + " P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, извините я не понял вопроса обязательно в мужском роде"
+    words = text.split()
+    text = " ".join(word for word in words if word not in KEYWORDS)
+    driver_ready.wait()
+    response = ask_yandex_gpt(driver, text)
+    lower_response = response.lower()
     if response:
-        generate_speech(response)  # 🔊 Читаем ответ голосом
+        if any(phrase in lower_response for phrase in ["не понял", "не поняла", "не могу ответить"]):
+            play_audio_with_interrupt("../chebur_package/STT_vosk/phrase/sorri.wav")
+        else:
+            generate_speech(response)
     else:
-        play_audio_with_interrupt("../chebur_package/STT_vosk/phrase/sorri.wav")  # Если нет ответа, проигрываем "не понял"
+        play_audio_with_interrupt("../chebur_package/STT_vosk/phrase/sorri.wav")
 
 
-# Команды и их обработчики
+# Предзаписанные команды
 COMMANDS = {
     ("расскажи", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
     ("расскажи", "технологии", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
     ("расскажи", "аудитор", "ельцин"): lambda: play_audio('../chebur_package/STT_vosk/phrase/elcin.wav'),
     ("где", "столовая"): lambda: play_audio('../chebur_package/STT_vosk/phrase/canteen.wav'),
-    ("найди",): find_and_speak,  # Теперь это обычная функция
-    ("расскажи",): find_and_speak,
-    ("что",): find_and_speak,
-    ("кто",): find_and_speak,
-    ("узнай",): find_and_speak,
-    ("почему",): find_and_speak,
-    ("сколько",): find_and_speak,
-    ("как",): find_and_speak,
-    ("объясни",): find_and_speak,
-    ("зачем",): find_and_speak,
-    ("где",): find_and_speak,
-    ("когда",): find_and_speak,
-    ("расскажи", "анекдот"): lambda: play_audio('../chebur_package/STT_vosk/phrase/anekdot1.wav'),
 }
 
 while True:
@@ -113,45 +95,38 @@ while True:
         result = json.loads(recognizer.Result())
         text = result["text"]
 
-        if any(keyword in text for keyword in KEYWORDS):  # Если в тексте есть "Чебурашка"
-            words = text.split()  # Разбиваем текст на слова
+        if any(keyword in text for keyword in KEYWORDS):
+            words = text.split()
 
-            if len(words) == 1 and words[0] in KEYWORDS:  # Если сказано только "Чебурашка"
+            if len(words) == 1 and words[0] in KEYWORDS:
                 print("Я слушаю вас!")
-
-                # Воспроизведение случайного приветствия с возможностью прерывания
                 audio_files = ["../chebur_package/STT_vosk/phrase/hello1.wav",
                                "../chebur_package/STT_vosk/phrase/hello2.wav",
                                "../chebur_package/STT_vosk/phrase/hello3.wav"]
                 play_audio_with_interrupt(random.choice(audio_files))
 
-                # Ждем следующую команду после обращения
                 while True:
                     data = stream.read(4000, exception_on_overflow=False)
                     if recognizer.AcceptWaveform(data):
                         result = json.loads(recognizer.Result())
                         text = result["text"]
-                        break  # Получили команду, выходим из внутреннего цикла
+                        break
 
-            # Проверяем команды (если в первом обращении было больше, чем просто "Чебурашка", команда выполнится сразу)
             found_command = False
             for command, action in COMMANDS.items():
                 if all(word in text for word in command):
-                    print(f"Обнаружена команда: {command}")  # ✅ Добавил print
-                    if is_speaking and (time.time() - start_time < 5):
-                        is_speaking = False
-                        print("Прерываю воспроизведение...")
-
-                    if command in [("найди",), ("расскажи",), ("что",), ("кто",), ("узнай",), ("почему",), ("сколько",),
-                                   ("как",), ("объясни",), ("зачем",), ("где",), ("когда",)]:
-                        action(text)
-                    else:
-                        action()
-
+                    print(f"Обнаружена команда: {command}")
+                    action()
                     found_command = True
                     break
 
             if not found_command:
-                print(f"Команда не распознана: {text}")  # ✅ Добавил print
-                play_audio_with_interrupt('../chebur_package/STT_vosk/phrase/sorri.wav')
-
+                print(f"Команда не распознана: {text}. Отправляю запрос Алисе...")
+                wait_phrases = [
+                    "../chebur_package/STT_vosk/phrase/wait1.wav",
+                    "../chebur_package/STT_vosk/phrase/wait2.wav",
+                    "../chebur_package/STT_vosk/phrase/wait3.wav"
+                ]
+                # Запускаем озвучку в отдельном потоке
+                threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
+                ask_alice(text)
