@@ -74,7 +74,7 @@ def find_and_speak(text):
         "../chebur_package/STT_vosk/phrase/wait3.wav"
     ]
     # Запускаем озвучку в отдельном потоке
-    #threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
+    threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
 
     """Функция обработки команды 'найди'"""
     text = text+" P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, что не понял вопроса."
@@ -96,6 +96,7 @@ COMMANDS = {
     ("найди",): find_and_speak,  # Теперь это обычная функция
     ("расскажи",): find_and_speak,
     ("что",): find_and_speak,
+    ("кто",): find_and_speak,
     ("узнай",): find_and_speak,
     ("почему",): find_and_speak,
     ("сколько",): find_and_speak,
@@ -138,7 +139,7 @@ while True:
                                 print("Прерываю воспроизведение...")
                             print(text)
                             # Вызываем обработчик команды
-                            if command in [("найди",), ("расскажи",), ("что",), ("узнай",), ("почему",), ("сколько",), ("как",), ("объясни",), ("зачем",), ("где",), ("когда",)]:
+                            if command in [("найди",), ("расскажи",), ("что",), ("кто",), ("узнай",), ("почему",), ("сколько",), ("как",), ("объясни",), ("зачем",), ("где",), ("когда",)]:
                                 action(text)
                             else:
                                 action()
