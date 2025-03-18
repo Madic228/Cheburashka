@@ -66,7 +66,7 @@ threading.Thread(target=start_driver, daemon=True).start()
 
 
 def ask_alice(text):
-    text = text + " P.S. ответь по русски одним абзацем максимум на 150 символов, но если до P.S. передана бессмыслица, то ответь, извините я не понял вопроса обязательно в мужском роде"
+    text = "Сейчас я задам тебе вопрос ответь на русском языке строго одним абзацем, максимум 150 символов. Не используй диалоги и роли. Если вопрос бессмысленный или неясный, ответь: 'Извините, я не понял вопрос'. Вот текст вопроса на который нужно по возможности ответить: " + text
     words = text.split()
     text = " ".join(word for word in words if word not in KEYWORDS)
     driver_ready.wait()
@@ -74,16 +74,22 @@ def ask_alice(text):
     lower_response = response.lower()
     if response:
         if any(phrase in lower_response for phrase in ["не понял", "не поняла", "не могу ответить"]):
-            play_audio_with_interrupt("../chebur_package/STT_vosk/phrase/sorri.wav")
+            audio_files = ["../chebur_package/STT_vosk/phrase/sorri.wav",
+                           "../chebur_package/STT_vosk/phrase/sorri2.wav",
+                           "../chebur_package/STT_vosk/phrase/sorri3.wav"]
+            play_audio_with_interrupt(random.choice(audio_files))
         else:
             generate_speech(response)
     else:
-        play_audio_with_interrupt("../chebur_package/STT_vosk/phrase/sorri.wav")
-
+        audio_files = ["../chebur_package/STT_vosk/phrase/sorri.wav",
+                       "../chebur_package/STT_vosk/phrase/sorri2.wav",
+                       "../chebur_package/STT_vosk/phrase/sorri3.wav"]
+        play_audio_with_interrupt(random.choice(audio_files))
 
 # Предзаписанные команды
 COMMANDS = {
     ("расскажи", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
+    ("расскажи", "анекдот"): lambda: play_audio('../chebur_package/STT_vosk/phrase/anekdot1.wav'),
     ("расскажи", "технологии", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
     ("расскажи", "аудитор", "ельцин"): lambda: play_audio('../chebur_package/STT_vosk/phrase/elcin.wav'),
     ("где", "столовая"): lambda: play_audio('../chebur_package/STT_vosk/phrase/canteen.wav'),
@@ -97,6 +103,12 @@ while True:
 
         if any(keyword in text for keyword in KEYWORDS):
             words = text.split()
+            # Убираем всё до ключевого слова
+            for i, word in enumerate(words):
+                if word in KEYWORDS:
+                    words = words[i:]  # Обрезаем текст от ключевого слова и дальше
+                    break
+            text = " ".join(words)
 
             if len(words) == 1 and words[0] in KEYWORDS:
                 print("Я слушаю вас!")
