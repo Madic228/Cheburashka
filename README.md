@@ -80,7 +80,7 @@ python chebur_package/main.py
 ```
 
 
-###/////////////Подключение///////////////
+### /////////////Подключение///////////////
 Для подключение без знания IP address:
 1. ssh rasp@raspberrypi.local
 2. hostname -I
@@ -89,7 +89,7 @@ python chebur_package/main.py
 Login: rasp
 pass: 1
 
-Клонирование голоса:
+### Клонирование голоса:
 
 Переходите на сайт
 https://www.minimax.io/audio/voices
@@ -101,5 +101,23 @@ https://www.minimax.io/audio/voices
 Или любой другой с чистым голосом Чебурашки.
 
 После создание не забудьте в Voices выбрать нужный голос!
+
+### Включение/отключение браузера
+Для работы браузера в фоном режиме добавьте в файлы 
+#options.add_argument("--headless") #  Запускаем браузер в фоне
+
+# Инструкция по управлению сервисом `cheburashka.service` и процессами Chromium
+
+### Основные команды:
+1. Включить сервис: `sudo systemctl start cheburashka.service`
+2. Отключить сервис: `sudo systemctl stop cheburashka.service`
+3. Перезапустить сервис: `sudo systemctl restart cheburashka.service`
+4. Проверить статус сервиса: `sudo systemctl status cheburashka.service`
+5. Завершить процесс Chromium: `sudo kill <PID>`
+6. Принудительно завершить процесс Chromium: `sudo kill -9 <PID>`
+7. Завершить все процессы Chromium: `sudo killall chromium`
+8. Просмотреть PID процессов Chromium: `pgrep -a chromium`
+9. Просмотр логов sudo journalctl -u cheburashka.service
+   
 
 
