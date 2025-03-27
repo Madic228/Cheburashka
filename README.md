@@ -80,4 +80,25 @@ python chebur_package/main.py
 ```
 
 
+/////////////Подключение///////////////
+Для подключение без знания IP address:
+1. ssh rasp@raspberrypi.local
+2. hostname -I
+3. Открыть RDP и ввести IP-address
+
+Login: rasp
+pass: 1
+
+Клонирование голоса:
+
+Переходите на сайт
+https://www.minimax.io/audio/voices
+
+Нажимаете Create your Voice Clone
+
+В Step 1. Import Voice вставляете этот файл: https://drive.google.com/file/d/1ecsrgQV_9aBclx70l9ohMIzWjzNlBWwg/view?usp=sharing
+Или любой другой с чистым голосом Чебурашки.
+
+После создание не забудьте в Voices выбрать нужный голос!
+
 
