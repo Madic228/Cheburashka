@@ -6,11 +6,12 @@ import threading
 from vosk import Model, KaldiRecognizer
 import simpleaudio as sa
 
-from chebur_package.yandex_gpt_search.yagpt_selenium import init_driver, ask_yandex_gpt
-from chebur_package.speech_synthesis.tts_selenium import generate_speech
+from yandex_gpt_search.yagpt_selenium import init_driver, ask_yandex_gpt
+from speech_synthesis.tts_selenium import generate_speech, select_russian_language
 
 # Загрузка модели
-model = Model(r"STT_vosk/models_stt/vosk-model-small-ru-0.22")
+model = Model(r"/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/models_stt/vosk-model-small-ru-0.22")
+#model = Model(r'/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/models_stt/vosk-model-ru-0.42')
 recognizer = KaldiRecognizer(model, 16000)
 
 # Настройка микрофона
@@ -74,25 +75,26 @@ def ask_alice(text):
     lower_response = response.lower()
     if response:
         if any(phrase in lower_response for phrase in ["не понял", "не поняла", "не могу ответить"]):
-            audio_files = ["../chebur_package/STT_vosk/phrase/sorri.wav",
-                           "../chebur_package/STT_vosk/phrase/sorri2.wav",
-                           "../chebur_package/STT_vosk/phrase/sorri3.wav"]
+            audio_files = ["/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri.wav",
+                           "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri2.wav",
+                           "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri3.wav"]
             play_audio_with_interrupt(random.choice(audio_files))
         else:
+            #select_russian_language()
             generate_speech(response)
     else:
-        audio_files = ["../chebur_package/STT_vosk/phrase/sorri.wav",
-                       "../chebur_package/STT_vosk/phrase/sorri2.wav",
-                       "../chebur_package/STT_vosk/phrase/sorri3.wav"]
+        audio_files = ["/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri.wav",
+                       "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri2.wav",
+                       "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/sorri3.wav"]
         play_audio_with_interrupt(random.choice(audio_files))
 
 # Предзаписанные команды
 COMMANDS = {
-    ("расскажи", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
+    ("расскажи", "технопарк"): lambda: play_audio('/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/techno.wav'),
     ("расскажи", "анекдот"): lambda: play_audio('../chebur_package/STT_vosk/phrase/anekdot1.wav'),
-    ("расскажи", "технологии", "технопарк"): lambda: play_audio('../chebur_package/STT_vosk/phrase/techno.wav'),
-    ("расскажи", "аудитор", "ельцин"): lambda: play_audio('../chebur_package/STT_vosk/phrase/elcin.wav'),
-    ("где", "столовая"): lambda: play_audio('../chebur_package/STT_vosk/phrase/canteen.wav'),
+    ("расскажи", "технологии", "технопарк"): lambda: play_audio('/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/techno.wav'),
+    ("расскажи", "аудитор", "ельцин"): lambda: play_audio('/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/elcin.wav'),
+    ("где", "столовая"): lambda: play_audio('/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/canteen.wav'),
 }
 
 while True:
@@ -112,9 +114,9 @@ while True:
 
             if len(words) == 1 and words[0] in KEYWORDS:
                 print("Я слушаю вас!")
-                audio_files = ["../chebur_package/STT_vosk/phrase/hello1.wav",
-                               "../chebur_package/STT_vosk/phrase/hello2.wav",
-                               "../chebur_package/STT_vosk/phrase/hello3.wav"]
+                audio_files = ["/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/hello1.wav",
+                               "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/hello2.wav",
+                               "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/hello3.wav"]
                 play_audio_with_interrupt(random.choice(audio_files))
 
                 while True:
@@ -135,9 +137,9 @@ while True:
             if not found_command:
                 print(f"Команда не распознана: {text}. Отправляю запрос Алисе...")
                 wait_phrases = [
-                    "../chebur_package/STT_vosk/phrase/wait1.wav",
-                    "../chebur_package/STT_vosk/phrase/wait2.wav",
-                    "../chebur_package/STT_vosk/phrase/wait3.wav"
+                    "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/wait1.wav",
+                    "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/wait2.wav",
+                    "/home/rasp/Desktop/cheburator/chebur_package/STT_vosk/phrase/wait3.wav"
                 ]
                 # Запускаем озвучку в отдельном потоке
                 threading.Thread(target=play_audio, args=(random.choice(wait_phrases),), daemon=True).start()
